@@ -1,0 +1,32 @@
+name: Build TB375FC Droidspaces candidate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/build-kernel.yml'
+      - 'scripts/**'
+      - 'config/**'
+      - 'patches/**'
+permissions:
+  contents: read
+concurrency:
+  group: tb375fc-kernel
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y bc bison flex libssl-dev libelf-dev dwarves lz4 build-essential python3 cpio rsync
+      - name: Build baseline and Droidspaces candidate
+        run: bash scripts/build-kernel.sh
+      - name: Upload build reports and untested kernel
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tb375fc-droidspaces-${{ github.run_id }}
+          path: dist/
+          if-no-files-found: warn
+          retention-days: 14
